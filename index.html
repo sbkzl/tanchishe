@@ -2,130 +2,165 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>贪吃蛇游戏</title>
+    <title>贪吃蛇</title>
     <style>
         body {
-            background: #1a1a1a;
-            color: white;
-            font-family: monospace;
+            background: #000;
+            color: #eee;
+            font-family: "Consolas", monospace;
             text-align: center;
-            padding-top: 20px;
+            margin-top: 40px;
         }
-        #game {
-            display: inline-block;
-            background: black;
-            padding: 10px;
-            border: 2px solid #666;
+        #box {
+            font-size: 18px;
+            line-height: 1.1;
+            white-space: pre;
         }
     </style>
 </head>
 <body>
-<h2>贪吃蛇 C 语言风格网页版</h2>
-<br>
-<div id="game"></div>
-<p>W A S D 控制方向 | 撞到墙或自己结束</p>
+    <div id="box"></div>
+    <p>WASD 控制方向</p>
 
 <script>
-    const WIDTH = 25;
-    const HEIGHT = 15;
-    let snake = [{x:12,y:7},{x:11,y:7},{x:10,y:7}];
-    let food = {x:5,y:5};
-    let dir = 'RIGHT';
-    let nextDir = 'RIGHT';
-    let score = 0;
-    let gameOver = false;
-    const gameDiv = document.getElementById('game');
+const W = 25;
+const H = 15;
+let gameOver = false;
+let score = 0;
 
-    function randomFood() {
-        let x = Math.floor(Math.random() * WIDTH);
-        let y = Math.floor(Math.random() * HEIGHT);
-        food = {x,y};
-    }
+// 蛇初始化：向右，不会自撞
+let snake = [
+    {x: 12, y: 7},
+    {x: 11, y: 7},
+    {x: 10, y: 7}
+];
+let dir = "RIGHT";
+let nextDir = "RIGHT";
+let food;
 
-    function draw() {
-        let out = '';
-        for(let i=0;i<WIDTH+2;i++) out+='#';
-        out+='\n';
-
-        for(let y=0;y<HEIGHT;y++){
-            out+='#';
-            for(let x=0;x<WIDTH;x++){
-                let isSnake = false;
-                if(x===snake[0].x && y===snake[0].y){
-                    out+='O';
-                    continue;
-                }
-                for(let i=1;i<snake.length;i++){
-                    if(x===snake[i].x && y===snake[i].y){
-                        out+='o';
-                        isSnake=true;
-                        break;
-                    }
-                }
-                if(isSnake) continue;
-                if(x===food.x && y===food.y) out+='F';
-                else out+=' ';
+// 随机食物：避开蛇身
+function createFood() {
+    while(true) {
+        let x = Math.floor(Math.random() * W);
+        let y = Math.floor(Math.random() * H);
+        let ok = true;
+        for(let p of snake) {
+            if(p.x === x && p.y === y) {
+                ok = false;
+                break;
             }
-            out+='#\n';
         }
+        if(ok) {
+            food = {x, y};
+            break;
+        }
+    }
+}
 
-        for(let i=0;i<WIDTH+2;i++) out+='#';
-        out+='\n\n分数：'+score;
-        gameDiv.innerText = out;
+// 绘制地图
+function render() {
+    let str = "";
+    // 上边框
+    for(let i = 0; i < W + 2; i++) str += "#";
+    str += "\n";
+
+    for(let y = 0; y < H; y++) {
+        str += "#";
+        for(let x = 0; x < W; x++) {
+            let isBody = false;
+            // 蛇头
+            if(x === snake[0].x && y === snake[0].y) {
+                str += "O";
+                continue;
+            }
+            // 蛇身
+            for(let i = 1; i < snake.length; i++) {
+                if(snake[i].x === x && snake[i].y === y) {
+                    str += "o";
+                    isBody = true;
+                    break;
+                }
+            }
+            if(isBody) continue;
+            // 食物
+            if(x === food.x && y === food.y) {
+                str += "F";
+            } else {
+                str += " ";
+            }
+        }
+        str += "#\n";
+    }
+    // 下边框
+    for(let i = 0; i < W + 2; i++) str += "#";
+    str += `\n分数：${score}`;
+
+    document.getElementById("box").innerText = str;
+}
+
+// 游戏逻辑
+function update() {
+    if(gameOver) return;
+    dir = nextDir;
+
+    // 新蛇头
+    let head = {...snake[0]};
+    switch(dir) {
+        case "UP": head.y--; break;
+        case "DOWN": head.y++; break;
+        case "LEFT": head.x--; break;
+        case "RIGHT": head.x++; break;
     }
 
-    function logic() {
-        if(gameOver) return;
-        dir = nextDir;
-        let head = {...snake[0]};
+    // 撞墙判定
+    if(head.x < 0 || head.x >= W || head.y < 0 || head.y >= H) {
+        gameOver = true;
+        return;
+    }
 
-        if(dir==='UP') head.y--;
-        if(dir==='DOWN') head.y++;
-        if(dir==='LEFT') head.x--;
-        if(dir==='RIGHT') head.x++;
-
-        if(head.x<0||head.x>=WIDTH||head.y<0||head.y>=HEIGHT){
-            gameOver=true;
-            alert('游戏结束！得分：'+score);
+    // 撞自己判定
+    for(let p of snake) {
+        if(p.x === head.x && p.y === head.y) {
+            gameOver = true;
             return;
         }
-
-        for(let b of snake){
-            if(b.x===head.x && b.y===head.y){
-                gameOver=true;
-                alert('游戏结束！得分：'+score);
-                return;
-            }
-        }
-
-        snake.unshift(head);
-
-        if(head.x===food.x && head.y===food.y){
-            score+=10;
-            randomFood();
-        }else{
-            snake.pop();
-        }
     }
 
-    document.addEventListener('keydown',e=>{
-        if(gameOver) return;
-        switch(e.key){
-            case 'w': case 'W': if(dir!=='DOWN') nextDir='UP'; break;
-            case 's': case 'S': if(dir!=='UP') nextDir='DOWN'; break;
-            case 'a': case 'A': if(dir!=='RIGHT') nextDir='LEFT'; break;
-            case 'd': case 'D': if(dir!=='LEFT') nextDir='RIGHT'; break;
-        }
-    });
+    snake.unshift(head);
 
-    function loop(){
-        logic();
-        draw();
-        setTimeout(loop,150);
+    // 吃食物
+    if(head.x === food.x && head.y === food.y) {
+        score += 10;
+        createFood();
+    } else {
+        snake.pop();
     }
+}
 
-    randomFood();
-    loop();
+// 键盘监听 禁止反向
+document.addEventListener("keydown", e => {
+    if(gameOver) return;
+    switch(e.key.toLowerCase()) {
+        case "w": if(dir !== "DOWN") nextDir = "UP"; break;
+        case "s": if(dir !== "UP") nextDir = "DOWN"; break;
+        case "a": if(dir !== "RIGHT") nextDir = "LEFT"; break;
+        case "d": if(dir !== "LEFT") nextDir = "RIGHT"; break;
+    }
+});
+
+// 游戏主循环
+function gameLoop() {
+    update();
+    render();
+    if(!gameOver) {
+        setTimeout(gameLoop, 160);
+    }
+}
+
+// 开局初始化
+createFood();
+render();
+gameLoop();
 </script>
 </body>
 </html>
