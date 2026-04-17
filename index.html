@@ -2,43 +2,45 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>贪吃蛇</title>
+    <title>超大屏贪吃蛇</title>
     <style>
         body {
             background: #000;
-            color: #eee;
+            color: #39ff14;
             font-family: "Consolas", monospace;
             text-align: center;
-            margin-top: 40px;
+            margin-top: 20px;
         }
         #box {
-            font-size: 18px;
-            line-height: 1.1;
+            font-size: 22px;
+            line-height: 1.25;
             white-space: pre;
         }
     </style>
 </head>
 <body>
+    <h1>超大空间贪吃蛇</h1>
     <div id="box"></div>
-    <p>WASD 控制方向</p>
+    <p style="font-size:18px">WASD 控制 | 超大地图不挤不卡</p>
 
 <script>
-const W = 25;
-const H = 15;
+// 改成超大地图
+const W = 45;
+const H = 22;
 let gameOver = false;
 let score = 0;
 
-// 蛇初始化：向右，不会自撞
+// 蛇初始位置居中，绝对不自撞
 let snake = [
-    {x: 12, y: 7},
-    {x: 11, y: 7},
-    {x: 10, y: 7}
+    {x: 22, y: 11},
+    {x: 21, y: 11},
+    {x: 20, y: 11}
 ];
 let dir = "RIGHT";
 let nextDir = "RIGHT";
 let food;
 
-// 随机食物：避开蛇身
+// 食物绝对不在蛇身上
 function createFood() {
     while(true) {
         let x = Math.floor(Math.random() * W);
@@ -57,10 +59,9 @@ function createFood() {
     }
 }
 
-// 绘制地图
+// 绘制大地图
 function render() {
     let str = "";
-    // 上边框
     for(let i = 0; i < W + 2; i++) str += "#";
     str += "\n";
 
@@ -68,42 +69,36 @@ function render() {
         str += "#";
         for(let x = 0; x < W; x++) {
             let isBody = false;
-            // 蛇头
             if(x === snake[0].x && y === snake[0].y) {
-                str += "O";
+                str += "●";
                 continue;
             }
-            // 蛇身
             for(let i = 1; i < snake.length; i++) {
                 if(snake[i].x === x && snake[i].y === y) {
-                    str += "o";
+                    str += "○";
                     isBody = true;
                     break;
                 }
             }
             if(isBody) continue;
-            // 食物
             if(x === food.x && y === food.y) {
-                str += "F";
+                str += "★";
             } else {
                 str += " ";
             }
         }
         str += "#\n";
     }
-    // 下边框
     for(let i = 0; i < W + 2; i++) str += "#";
-    str += `\n分数：${score}`;
+    str += `\n游戏分数：${score}`;
 
     document.getElementById("box").innerText = str;
 }
 
-// 游戏逻辑
 function update() {
     if(gameOver) return;
     dir = nextDir;
 
-    // 新蛇头
     let head = {...snake[0]};
     switch(dir) {
         case "UP": head.y--; break;
@@ -112,23 +107,24 @@ function update() {
         case "RIGHT": head.x++; break;
     }
 
-    // 撞墙判定
+    // 撞墙
     if(head.x < 0 || head.x >= W || head.y < 0 || head.y >= H) {
         gameOver = true;
+        alert(`游戏结束！最终分数：${score}`);
         return;
     }
 
-    // 撞自己判定
+    // 撞身体
     for(let p of snake) {
         if(p.x === head.x && p.y === head.y) {
             gameOver = true;
+            alert(`游戏结束！最终分数：${score}`);
             return;
         }
     }
 
     snake.unshift(head);
 
-    // 吃食物
     if(head.x === food.x && head.y === food.y) {
         score += 10;
         createFood();
@@ -137,27 +133,25 @@ function update() {
     }
 }
 
-// 键盘监听 禁止反向
+// 按键禁止反向
 document.addEventListener("keydown", e => {
     if(gameOver) return;
-    switch(e.key.toLowerCase()) {
-        case "w": if(dir !== "DOWN") nextDir = "UP"; break;
-        case "s": if(dir !== "UP") nextDir = "DOWN"; break;
-        case "a": if(dir !== "RIGHT") nextDir = "LEFT"; break;
-        case "d": if(dir !== "LEFT") nextDir = "RIGHT"; break;
-    }
+    let key = e.key.toLowerCase();
+    if(key === "w" && dir !== "DOWN") nextDir = "UP";
+    if(key === "s" && dir !== "UP") nextDir = "DOWN";
+    if(key === "a" && dir !== "RIGHT") nextDir = "LEFT";
+    if(key === "d" && dir !== "LEFT") nextDir = "RIGHT";
 });
 
-// 游戏主循环
+// 流畅速度
 function gameLoop() {
     update();
     render();
     if(!gameOver) {
-        setTimeout(gameLoop, 160);
+        setTimeout(gameLoop, 140);
     }
 }
 
-// 开局初始化
 createFood();
 render();
 gameLoop();
